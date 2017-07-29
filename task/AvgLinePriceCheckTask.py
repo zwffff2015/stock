@@ -225,7 +225,7 @@ def runTask():
         stockList = getCodeList()
         checkAvgLine("avgline.csv", stockList, False)
 
-        stockList = loadJsonConfig(os.path.abspath(os.path.join(os.getcwd(), "../config/goodStockList.json")))
+        stockList = select(unicode("SELECT code,name from s_stock_info")) #loadJsonConfig(os.path.abspath(os.path.join(os.getcwd(), "../config/goodStockList.json")))
         checkAvgLine("avgline_all.csv", stockList)
         disconnect()
 

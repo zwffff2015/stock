@@ -120,8 +120,8 @@ def updateMACD():
 
 
 def updateAllMACD():
-    sql = unicode("select code from s_stock_tech group by code")
-    stockList = []  # select(sql)
+    sql = unicode("select code from s_stock_info order by code asc")
+    stockList = select(sql)
 
     if stockList is None:
         return
@@ -129,7 +129,7 @@ def updateAllMACD():
     for stock in stockList:
         sql = unicode(
             "select code,date,macd,dif,dea from s_stock_tech where code='{0}' ORDER by code,date asc limit 1,60000").format(
-            stock)
+            stock[0])
         data = select(sql)
 
         if len(data) <= 0:

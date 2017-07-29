@@ -16,7 +16,7 @@ from common.HttpHelper import httpGet
 from stock.StockInfo import getPE
 from stock.StockInfo import getPEG, getShAvgPe, getSzAvgPe
 from common.JsonHelper import loadJsonConfig
-from datetime import datetime
+from datetime import datetime, timedelta
 from threading import Timer
 from db.MysqlUtil import initMysql, execute, select, batchInsert, disconnect
 from wechat.weChatSender import sendMessageToMySelf, sendMessageToBaby
@@ -187,6 +187,34 @@ def updateLatestGoodStockListToConfig():
     writeFile(saveFileName, json.dumps(data))
 
 
+def updateNewGoodList():
+    weekday = datetime.now().weekday()
+    lastSaturday = (datetime.now() + timedelta(days=(-2 - weekday))).strftime('%Y-%m-%d')
+    saturday = (datetime.now() + timedelta(days=(5 - weekday))).strftime('%Y-%m-%d')
+
+    for i in range(1, 9):
+        lastWeekSql = unicode("select code from b_peg where dataType={0} and date='{1}'").format(i, lastSaturday)
+        oldData = select(lastWeekSql)
+
+        dic = {}
+        for item in oldData:
+            dic[item[0]] = 1
+
+        newList = select(
+            unicode("select code,name,pe,peg from b_peg where dataType={0} and date='{1}'").format(i, saturday))
+
+        result = []
+        result.append(
+            unicode("{0},{1},{2},{3}\n").format("代码", "名称", "PE", "PEG").encode('gbk'))
+
+        for item in newList:
+            if item[0] not in dic:
+                result.append(
+                    unicode("{0},{1},{2},{3}\n").format(item[0], item[1], item[2], item[3]).encode('gbk'))
+        saveFile("newGoodList_{0}.csv".format(i), result)
+
+
+# 此处有问题了，需要修正来查找新的股票
 def updateNewList():
     oldList = loadJsonConfig(os.path.abspath(
         os.path.join(os.getcwd(), "../backup/goodStockList_" + datetime.now().strftime('%Y-%m-%d') + ".json")))
@@ -194,7 +222,8 @@ def updateNewList():
     for item in oldList:
         dic[item[0]] = 1
 
-    stockList = loadJsonConfig(os.path.abspath(os.path.join(os.getcwd(), "../config/goodStockList.json")))
+    stockList = select(unicode(
+        "SELECT code,name from s_stock_info"))  # loadJsonConfig(os.path.abspath(os.path.join(os.getcwd(), "../config/goodStockList.json")))
     newList = []
     for item in stockList:
         if item[0] not in dic:
@@ -248,7 +277,8 @@ def runTask():
         getMSCI()
         updateLatestGoodStockListToConfig()
         updateNewList()
-        getStockHistoryInfo()
+        updateNewGoodList()
+        # getStockHistoryInfo()
         disconnect()
 
         end = datetime.now()
@@ -262,7 +292,7 @@ def main(argv):
     reload(sys)
     sys.setdefaultencoding('utf-8')
 
-    # runTask()
+    runTask()
 
 
 if __name__ == '__main__':

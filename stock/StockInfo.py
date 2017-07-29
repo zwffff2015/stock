@@ -250,7 +250,6 @@ def getStockInfo(code):
     jo = json.loads(res)
     data = jo['Value']
 
-
     result = {}
     result['limitUp'] = data[23]
     result['limitDown'] = data[24]
@@ -272,12 +271,13 @@ def getStockInfo(code):
     result['internalPan'] = data[40]
     result['externalPan'] = data[39]
     result['code'] = code
-    return result
+
+    return None if float(result['closePrice']) == 0 else result
 
 
 def getNMaxHigh(code, days):
     priceInfo = getNPrice(code, days, priceType='high')
-    #print priceInfo
+    # print priceInfo
     max = 0
     for price in priceInfo:
         if (priceInfo[price] > max):
@@ -332,7 +332,7 @@ def getNQuShi(code, days):
         else:
             maxLessAvgTimes = 0
 
-        #print price, price1
+        # print price, price1
         if (price <= price1):
             # 上行趋势
             upTimes = upTimes + 1
@@ -355,4 +355,4 @@ def getNQuShi(code, days):
                 maxUpTimes = 0
             maxDownTimes = maxDownTimes + 1
 
-    #print downTimes, upTimes, currentMaxDownTimes, maxDownStartIndex, currentMaxUpTimes, maxUpStartIndex, currentMaxLessAvgTimes, maxLessAvgStartIndex, lastStatus
+            # print downTimes, upTimes, currentMaxDownTimes, maxDownStartIndex, currentMaxUpTimes, maxUpStartIndex, currentMaxLessAvgTimes, maxLessAvgStartIndex, lastStatus

@@ -15,7 +15,8 @@ from threading import Timer
 
 
 def updateMAData(startDate):
-    stockList = loadJsonConfig(os.path.abspath(os.path.join(os.getcwd(), "../config/goodStockList.json")))
+    stockList = select(unicode(
+        "SELECT code,name from s_stock_info"))  # loadJsonConfig(os.path.abspath(os.path.join(os.getcwd(), "../config/goodStockList.json")))
     for stock in stockList:
         code = stock[0]
         writeLog(unicode("开始更新股票：{0}，名称：{1}的均线数据").format(code, stock[1]))
@@ -57,7 +58,8 @@ def calculateMA(dayCount, data):
 
 
 def updateTodayMAData():
-    stockList = loadJsonConfig(os.path.abspath(os.path.join(os.getcwd(), "../config/goodStockList.json")))
+    stockList = select(unicode(
+        "SELECT code,name from s_stock_info"))  # loadJsonConfig(os.path.abspath(os.path.join(os.getcwd(), "../config/goodStockList.json")))
     for stock in stockList:
         code = stock[0]
         writeLog(unicode("开始更新股票：{0}，名称：{1} 今日的均线数据").format(code, stock[1]))
@@ -88,7 +90,7 @@ def getMAData(dayCount, code):
 
 
 def runTask():
-    if datetime.today().weekday() < 5 and datetime.now().hour >= 20 and datetime.now().hour < 21 and datetime.now().minute < 20:
+    if datetime.today().weekday() < 5 and datetime.now().hour >= 21 and datetime.now().hour < 22 and datetime.now().minute < 20:
         sendMessageToMySelf(unicode("开始更新今日均线数据"))
         begin = datetime.now()
 

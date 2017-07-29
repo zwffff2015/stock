@@ -272,13 +272,18 @@ def saveStockInfo():
     diff = 0 if weekday < 5 else weekday - 4
     date = (date - timedelta(days=diff)).strftime('%Y-%m-%d')
 
-    stockList = loadJsonConfig(os.path.abspath(os.path.join(os.getcwd(), "../config/goodStockList.json")))
+    stockList = select(unicode(
+        "SELECT code,name from s_stock_info"))  # loadJsonConfig(os.path.abspath(os.path.join(os.getcwd(), "../config/goodStockList.json")))
     i = 0
     while i < len(stockList):
         code = stockList[i][0]
 
         try:
             info = getStockInfo(code)
+            if info is None:
+                i = i + 1
+                continue
+
             saveStockInfoToDb(info, date)
             i = i + 1
         except Exception, e:

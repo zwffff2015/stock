@@ -205,7 +205,7 @@ def checkAvgline(stockList):
 
 
 def runTask():
-    if (datetime.now().hour >= 9 and datetime.now().hour < 10 and datetime.now().minute <= 20):
+    if datetime.today().weekday() < 5 and datetime.now().hour >= 9 and datetime.now().hour < 10 and datetime.now().minute <= 20:
         begin = datetime.now()
         sendMessageToMySelf(unicode("启动均线数据提醒"))
 

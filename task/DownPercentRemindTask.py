@@ -69,6 +69,8 @@ def reminder():
                 receiver = int(infos[5])
 
                 stockInfo = getStockInfo(code)
+                if stockInfo is None:
+                    continue
 
                 highPrice = float(stockInfo['highPrice'])
                 closePrice = float(stockInfo['closePrice'])
@@ -168,7 +170,7 @@ def reminder():
 
 
 def runTask():
-    if (datetime.now().hour >= 9 and datetime.now().hour < 10 and datetime.now().minute <= 20):
+    if datetime.today().weekday() < 5 and datetime.now().hour >= 9 and datetime.now().hour < 10 and datetime.now().minute <= 20:
         begin = datetime.now()
         sendMessageToMySelf(unicode("启动今日涨跌幅提醒程序"))
 

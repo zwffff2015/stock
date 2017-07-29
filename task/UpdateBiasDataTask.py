@@ -15,7 +15,8 @@ from threading import Timer
 
 
 def updateBiasData(startDate):
-    stockList = loadJsonConfig(os.path.abspath(os.path.join(os.getcwd(), "../config/goodStockList.json")))
+    stockList = select(unicode(
+        "SELECT code,name from s_stock_info"))  # loadJsonConfig(os.path.abspath(os.path.join(os.getcwd(), "../config/goodStockList.json")))
     for stock in stockList:
         code = stock[0]
         writeLog(unicode("开始更新股票：{0}，名称：{1}的Bias数据").format(code, stock[1]))
@@ -63,8 +64,8 @@ def calculateMA(dayCount, data):
 
 
 def updateTodayBiasData():
-    stockList = [
-        ['000001', 'ass']]  # loadJsonConfig(os.path.abspath(os.path.join(os.getcwd(), "../config/goodStockList.json")))
+    stockList = select(unicode(
+        "SELECT code,name from s_stock_info"))  # loadJsonConfig(os.path.abspath(os.path.join(os.getcwd(), "../config/goodStockList.json")))
     today = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
     for stock in stockList:
         code = stock[0]
@@ -104,8 +105,8 @@ def getMAData(dayCount, code, date):
 
 
 def runTask():
-    if datetime.today().weekday() < 5 and datetime.now().hour >= 20 and datetime.now().hour < 21 and datetime.now().minute < 20:
-        sendMessageToMySelf(unicode("开始更新今日均线数据"))
+    if datetime.today().weekday() < 5 and datetime.now().hour >= 21 and datetime.now().hour < 22 and datetime.now().minute < 20:
+        sendMessageToMySelf(unicode("开始更新今日bias数据"))
         begin = datetime.now()
 
         initMysql()
@@ -113,7 +114,7 @@ def runTask():
         disconnect()
         end = datetime.now()
 
-        message = unicode("更新今日均线数据的任务执行完毕,当前时间：{0}，执行用时：{1}").format(datetime.now(), end - begin)
+        message = unicode("更新今日bias数据的任务执行完毕,当前时间：{0}，执行用时：{1}").format(datetime.now(), end - begin)
         writeLog(message)
         sendMessageToMySelf(message)
 
@@ -126,8 +127,7 @@ def main(argv):
     sys.setdefaultencoding('utf-8')
 
     initMysql()
-    updateTodayBiasData()
-    #runTask()
+    runTask()
 
 
 if __name__ == '__main__':

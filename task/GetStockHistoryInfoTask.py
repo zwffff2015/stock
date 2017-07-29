@@ -20,12 +20,10 @@ import json
 def updateStockHistoryInfoByTHS(stockList):
     for stock in stockList:
         code = stock[0]
-        if (int(code) < 937):
-            continue
         i = 2010
         thisYear = datetime.now().year
         while (i <= thisYear):
-            #time.sleep(1)
+            # time.sleep(1)
             infos = getStockInfos(code, i)
             if infos is None:
                 continue
@@ -106,13 +104,13 @@ def getStockHistoryInfoFromConfig():
 
 
 def updateAllStockHistoryInfo():
-    sql = unicode("select code,count(*) from s_stock_tech group by code order by code asc")
+    sql = unicode("select code,name from s_stock_info order by code asc")
     data = select(sql)
     updateStockHistoryInfoByTHS(data)
 
 
 def updateStockOtherInfo():
-    sql = unicode("select code,count(*) from s_stock_tech group by code order by code asc")
+    sql = unicode("select code,name from s_stock_info order by code asc")
     stockList = select(sql)
 
     for stock in stockList:
@@ -120,7 +118,10 @@ def updateStockOtherInfo():
         selectInfoSql = unicode("select date,closePrice from s_stock where code='{0}' order by date asc").format(code)
         data = select(selectInfoSql)
 
+        writeLog(unicode("更新股票其他指标数据: code: {0}").format(code))
         updataStockBias(code, data, 6)
+        updataStockBias(code, data, 12)
+        updataStockBias(code, data, 24)
         updateStockMA(code, data, 5)
         updateStockMA(code, data, 10)
         updateStockMA(code, data, 20)
@@ -133,12 +134,16 @@ def updateStockOtherInfo():
 
 def updateStockChangePercent(code, data):
     for i in range(1, len(data)):
-        changeAmount = data[i][1] - data[i - 1][1]
-        changePercent = round(changeAmount * 100 / data[i - 1][1], 2)
-        updateSql = unicode(
-            "update s_stock set changePercent={0},changeAmount={1} where code='{2}' and date='{3}'").format(
-            changePercent, changeAmount, code, data[i][0])
-        execute(updateSql)
+        try:
+            changeAmount = data[i][1] - data[i - 1][1]
+            changePercent = round(changeAmount * 100 / data[i - 1][1], 2)
+            updateSql = unicode(
+                "update s_stock set changePercent={0},changeAmount={1} where code='{2}' and date='{3}'").format(
+                changePercent, changeAmount, code, data[i][0])
+            execute(updateSql)
+        except Exception, e:
+            writeErrorLog(
+                unicode("更新涨幅数据失败: code:{0}, i:{1}, date:{2}, closePrice:{3}").format(code, i, data[i][0], data[i][1]))
 
 
 def updateStockMA(code, data, n):
@@ -163,10 +168,11 @@ def updataStockBias(code, data, n):
         avg = round(sum / n, 2)
 
         todayClosePrice = float(data[i][1])
-        bias = 0 if avg == 0 else round((todayClosePrice - avg) * 100 / todayClosePrice, 2)
-
-        sql = unicode("update s_stock set MA{0}={1} where code='{2}' and date='{3}'").format(n, avg, code, data[i][0])
-        # execute(sql)
+        bias = 0 if avg == 0 else round((todayClosePrice - avg) * 100 / avg, 2)
+        number = 1 if n == 6 else (2 if n == 12 else 3)
+        sql = unicode("update s_stock set BIAS{0}={1} where code='{2}' and date='{3}'").format(number, bias, code,
+                                                                                               data[i][0])
+        execute(sql)
 
 
 def main(argv):
@@ -178,7 +184,7 @@ def main(argv):
     initMysql()
     # getStockHistoryInfoFromDb()
     # getStockHistoryInfoFromConfig()
-    updateAllStockHistoryInfo()
+    updateStockOtherInfo()
     disconnect()
     end = datetime.now()
 

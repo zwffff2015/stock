@@ -22,7 +22,8 @@ def startForecast():
 
     tomorrow = (datetime.now() + timedelta(days=(3 if weekday == 4 else 1))).strftime('%Y-%m-%d')
 
-    stockList = loadJsonConfig(os.path.abspath(os.path.join(os.getcwd(), "../config/goodStockList.json")))
+    stockList = select(unicode(
+        "SELECT code,name from s_stock_info"))  # loadJsonConfig(os.path.abspath(os.path.join(os.getcwd(), "../config/goodStockList.json")))
     i = 0
     while i < len(stockList):
         code = stockList[i][0]
