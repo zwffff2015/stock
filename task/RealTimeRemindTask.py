@@ -13,8 +13,8 @@ from common.NumberHelper import getAboveNumber
 from stock.StockInfo import getPE, getStockInfo
 from common.FileHelper import writeFile
 from wechat.weChatSender import sendMessageToBaby, sendMessageToMySelf
-from common.LoggerHelper import writeDebugLog, writeInfoLog, writeWarningLog, writeErrorLog, writeLog
-
+from common.LoggerHelper import writeDebugLog, writeInfoLog, writeWarningLog, writeErrorLog, writeLog, writeExceptionLog
+from common.Logger import Logger
 
 def reminder():
     reminderCodeList = open(os.path.abspath(os.path.join(os.getcwd(), "../config/reminder.csv")), 'r').readlines()
@@ -151,4 +151,8 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    logger = Logger()
+    try:
+        main(sys.argv)
+    except Exception, e:
+        logger.exception(str(e))

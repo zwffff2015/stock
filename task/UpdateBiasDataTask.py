@@ -12,6 +12,7 @@ from common.LoggerHelper import writeErrorLog, writeWarningLog, writeInfoLog, wr
 from wechat.weChatSender import sendMessageToMySelf
 import time
 from threading import Timer
+from common.Logger import Logger
 
 
 def updateBiasData(startDate):
@@ -126,9 +127,12 @@ def main(argv):
     reload(sys)
     sys.setdefaultencoding('utf-8')
 
-    initMysql()
     runTask()
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    logger = Logger()
+    try:
+        main(sys.argv)
+    except Exception, e:
+        logger.exception(str(e))

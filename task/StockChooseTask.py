@@ -21,6 +21,7 @@ from threading import Timer
 from db.MysqlUtil import initMysql, execute, select, batchInsert, disconnect
 from wechat.weChatSender import sendMessageToMySelf, sendMessageToBaby
 from common.LoggerHelper import writeLog, writeWarningLog, writeErrorLog, writeDebugLog
+from common.Logger import Logger
 
 
 def getListData(code, page):
@@ -296,4 +297,8 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    logger = Logger()
+    try:
+        main(sys.argv)
+    except Exception, e:
+        logger.exception(str(e))

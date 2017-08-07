@@ -23,5 +23,9 @@ def writeWarningLog(message):
     logger.warning(message)
 
 
+def writeExceptionLog(message=''):
+    logger.exception(message)
+
+
 def writeLog(message):
     logger.info(message)

@@ -5,16 +5,19 @@ import os
 import time
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "..")))
+
+import traceback
 from entity.ReminderInfo import ReminderInfo
 import tushare as ts
 from threading import Timer
 from datetime import datetime, timedelta
 from common.NumberHelper import getAboveNumber
 from stock.StockInfo import getPE, getStockInfo
-from common.FileHelper import writeFile
+from common.FileHelper import writeFile, saveFile
 from wechat.weChatSender import sendMessageToBaby, sendMessageToMySelf
-from common.LoggerHelper import writeDebugLog, writeInfoLog, writeWarningLog, writeErrorLog, writeLog
+from common.LoggerHelper import writeDebugLog, writeInfoLog, writeWarningLog, writeErrorLog, writeLog, writeExceptionLog
 from db.MysqlUtil import initMysql, select, disconnect
+from common.Logger import Logger
 
 
 def reminder():
@@ -27,17 +30,21 @@ def reminder():
         name = getPE(code)[0]
         maxPrice = float(infos[1])
         minPrice = float(infos[2])
-        upPercent = float(infos[3])
-        downPercent = float(infos[4])
-        receiver = int(infos[5])
+        buyPrice = float(infos[3])
+        upPercent = float(infos[4])
+        downPercent = float(infos[5])
+        receiver = int(infos[6])
         sql = unicode(
-            "SELECT changePercent,closePrice from s_stock where code='{0}' ORDER by date desc limit 30").format(code)
+            "SELECT changePercent,closePrice,highPrice from s_stock where code='{0}' ORDER by date desc limit 30").format(
+            code)
         data = select(sql)
 
         totalChangePercentBefore = 0
         yesterdayChangePercent = 0
+        yesterdayHighPrice = 0
         if data is not None:
             yesterdayChangePercent = data[0][0]
+            yesterdayHighPrice = float(data[0][2])
             for i in range(1, len(data)):
                 changePercent = data[i][0]
                 if (changePercent < 0):
@@ -45,15 +52,17 @@ def reminder():
                 totalChangePercentBefore = totalChangePercentBefore + changePercent
             totalChangePercentBefore = totalChangePercentBefore + yesterdayChangePercent
 
-        dictReminder[code] = ReminderInfo(maxPrice, minPrice, upPercent, downPercent, receiver, code, name,
+        dictReminder[code] = ReminderInfo(maxPrice, minPrice, upPercent, downPercent, receiver, code, name, buyPrice,
+                                          yesterdayHighPrice,
                                           float(yesterdayChangePercent), float(totalChangePercentBefore))
 
     checkDict = {}  # 用于检查今天是否已经发送过某类信息
     date = datetime.now().strftime('%Y-%m-%d')
     result = []
     result.append(
-        unicode("{0},{1},{2},{3},{4},{5}\n").format('股票代码', '股票涨到多少元', '股票跌到多少元', '股票涨幅超过多少（%）', '股票跌幅超过多少（%）',
-                                                    '发给谁（0：期待，1：踏雪)').encode(
+        unicode("{0},{1},{2},{3},{4},{5},{6}\n").format('股票代码', '股票涨到多少元', '股票跌到多少元', '买入价', '股票涨幅超过多少（%）',
+                                                        '股票跌幅超过多少（%）',
+                                                        '发给谁（0：期待，1：踏雪)').encode(
             'gbk'))
 
     while 1 == 1:
@@ -64,9 +73,10 @@ def reminder():
                 code = infos[0].strip().zfill(6)
                 maxPrice = float(infos[1])
                 minPrice = float(infos[2])
-                upPercent = float(infos[3])
-                downPercent = float(infos[4])
-                receiver = int(infos[5])
+                buyPrice = float(infos[3])
+                upPercent = float(infos[4])
+                downPercent = float(infos[5])
+                receiver = int(infos[6])
 
                 stockInfo = getStockInfo(code)
                 if stockInfo is None:
@@ -79,8 +89,9 @@ def reminder():
                 minPrice = minPrice if minPrice == -1 or changePercent <= 0 or newMinPrice <= minPrice else newMinPrice
                 maxPrice = maxPrice if maxPrice == -1 or changePercent <= 0 else getAboveNumber(highPrice * 1.03)
                 result.append(
-                    unicode("{0},{1},{2},{3},{4},{5}\n").format(code, maxPrice, minPrice, upPercent, downPercent,
-                                                                receiver).encode(
+                    unicode("{0},{1},{2},{3},{4},{5},{6}\n").format(code, maxPrice, minPrice, buyPrice, upPercent,
+                                                                    downPercent,
+                                                                    receiver).encode(
                         'gbk'))
 
             saveFileName = os.path.abspath(
@@ -101,6 +112,35 @@ def reminder():
             highPercent = round((highPrice - pre_close) * 100 / pre_close, 2)
             currentPercent = round((price - pre_close) * 100 / pre_close, 2)
 
+            if (price <= reminderInfo.buyPrice * 0.88):  # 跌破12%，止损
+                checkKey = unicode('{0}_{1}_{2}').format(date, key, 'sell12')
+                if checkDict.has_key(checkKey) == False:
+                    message = unicode(
+                        '股票代码：{0}，名称：{1}，成本价：{2}, 当前价格为：{3}，跌幅：{4}%').format(key,
+                                                                             reminderInfo.name,
+                                                                             reminderInfo.buyPrice,
+                                                                             price,
+                                                                             (
+                                                                                 price - reminderInfo.buyPrice) / reminderInfo.buyPrice
+                                                                             )
+                    writeInfoLog(message)
+                    sendMessageToMySelf(message) if reminderInfo.receiver == 1 else sendMessageToBaby(message)
+                    checkDict[checkKey] = True
+
+            if (price <= reminderInfo.yesterdayHighPrice * 0.95 and price > reminderInfo.buyPrice):  # 最高收益回落5%
+                checkKey = unicode('{0}_{1}_{2}').format(date, key, 'sell5')
+                if checkDict.has_key(checkKey) == False:
+                    message = unicode(
+                        '股票代码：{0}，名称：{1}，成本价：{2}, 当前价格为：{3}，昨日最高价：{4}%').format(key,
+                                                                                reminderInfo.name,
+                                                                                reminderInfo.buyPrice,
+                                                                                price,
+                                                                                reminderInfo.yesterdayHighPrice
+                                                                                )
+                    writeInfoLog(message)
+                    sendMessageToMySelf(message) if reminderInfo.receiver == 1 else sendMessageToBaby(message)
+                    checkDict[checkKey] = True
+
             # 今日最高价与当前价，跌幅超过了4.5
             if (highPercent > 0 and highPercent - currentPercent > 4.5):
                 checkKey = unicode('{0}_{1}_{2}').format(date, key, 'highdown')
@@ -112,7 +152,7 @@ def reminder():
                                                                                                            price,
                                                                                                            highPercent,
                                                                                                            currentPercent,
-                                                                                                           4.5,
+                                                                                                           4.5
                                                                                                            )
                     writeInfoLog(message)
                     sendMessageToMySelf(message) if reminderInfo.receiver == 1 else sendMessageToBaby(message)
@@ -160,7 +200,7 @@ def reminder():
                 if checkDict.has_key(checkKey) == False:
                     message = unicode('股票代码：{0}，名称：{4}，当前价格为：{1}，昨日和当前总跌幅为：{2}%，已经低于您预设的{3}%').format(key, price,
                                                                                                       todayDownPercent + reminderInfo.yesterdayChangePercent,
-                                                                                                      -4.2,
+                                                                                                      str(-4.2),
                                                                                                       reminderInfo.name)
                     writeInfoLog(message)
                     sendMessageToMySelf(message) if reminderInfo.receiver == 1 else sendMessageToBaby(message)
@@ -193,4 +233,8 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    logger = Logger()
+    try:
+        main(sys.argv)
+    except Exception, e:
+        logger.exception(str(e))

@@ -13,6 +13,7 @@ from threading import Timer
 from wechat.weChatSender import sendMessageToMySelf
 from datetime import datetime, timedelta
 from common.LoggerHelper import writeErrorLog
+from common.Logger import Logger
 
 
 def saveStockTechToDb(stockTechInfo, date, updateOp):
@@ -139,4 +140,8 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    logger = Logger()
+    try:
+        main(sys.argv)
+    except Exception, e:
+        logger.exception(str(e))

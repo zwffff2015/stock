@@ -14,6 +14,9 @@ from wechat.weChatSender import sendMessageToMySelf
 from datetime import datetime, timedelta
 from AnalysisTask import checkHighChangePercentStockForcase
 from common.LoggerHelper import writeLog, writeDebugLog, writeWarningLog, writeErrorLog
+from common.FileHelper import saveFile
+from common.Logger import Logger
+import logging
 
 
 class IndexResult:
@@ -318,4 +321,8 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    logger = Logger()
+    try:
+        main(sys.argv)
+    except Exception, e:
+        logger.exception(str(e))

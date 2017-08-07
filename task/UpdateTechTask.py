@@ -13,6 +13,7 @@ from wechat.weChatSender import sendMessageToMySelf
 import time
 from threading import Timer
 from common.NumberHelper import getFloat, getRound
+from common.Logger import Logger
 
 '''
     用于数据补充，如果从网站没有抓取到相应技术指标数据，则自己计算
@@ -100,8 +101,8 @@ def updateMACD():
         return
 
     for item in data:
-        code = '002466'  # item[0]
-        date = '2017-07-12'  # item[1]
+        code = item[0]
+        date = item[1]
         try:
             data = getMACD(code, date)
             if data is None:
@@ -279,4 +280,8 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    logger = Logger()
+    try:
+        main(sys.argv)
+    except Exception, e:
+        logger.exception(str(e))

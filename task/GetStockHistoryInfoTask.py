@@ -9,9 +9,10 @@ from db.MysqlUtil import initMysql, execute, select, batchInsert, disconnect
 from common.JsonHelper import loadJsonConfig
 from api.tushareApi import getSimpleHistoryData
 from datetime import datetime, timedelta
-from common.LoggerHelper import writeErrorLog, writeWarningLog, writeInfoLog, writeDebugLog, writeLog
+from common.LoggerHelper import writeErrorLog, writeWarningLog, writeInfoLog, writeDebugLog, writeLog, writeExceptionLog
 from wechat.weChatSender import sendMessageToMySelf
 from common.HttpHelper import httpGet
+from common.FileHelper import saveFile
 import time
 import json
 
@@ -115,6 +116,8 @@ def updateStockOtherInfo():
 
     for stock in stockList:
         code = stock[0]
+        if int(code) < 601126:
+            continue
         selectInfoSql = unicode("select date,closePrice from s_stock where code='{0}' order by date asc").format(code)
         data = select(selectInfoSql)
 
@@ -176,21 +179,24 @@ def updataStockBias(code, data, n):
 
 
 def main(argv):
-    reload(sys)
-    sys.setdefaultencoding('utf-8')
+    try:
+        reload(sys)
+        sys.setdefaultencoding('utf-8')
 
-    # sendMessageToMySelf(unicode("开始查询股票历史行情数据"))
-    begin = datetime.now()
-    initMysql()
-    # getStockHistoryInfoFromDb()
-    # getStockHistoryInfoFromConfig()
-    updateStockOtherInfo()
-    disconnect()
-    end = datetime.now()
+        # sendMessageToMySelf(unicode("开始查询股票历史行情数据"))
+        begin = datetime.now()
+        initMysql()
+        # getStockHistoryInfoFromDb()
+        # getStockHistoryInfoFromConfig()
+        updateStockOtherInfo()
+        disconnect()
+        end = datetime.now()
 
-    message = unicode("查询股票历史行情数据的任务执行完毕,当前时间：{0}，执行用时：{1}").format(datetime.now(), end - begin)
-    writeLog(message)
-    sendMessageToMySelf(message)
+        message = unicode("查询股票历史行情数据的任务执行完毕,当前时间：{0}，执行用时：{1}").format(datetime.now(), end - begin)
+        writeLog(message)
+        sendMessageToMySelf(message)
+    except:
+        writeExceptionLog('RealTimeRemindTask Error.')
 
 
 if __name__ == '__main__':

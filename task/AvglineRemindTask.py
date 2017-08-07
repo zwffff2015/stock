@@ -18,7 +18,7 @@ from stock.StockInfo import getNPrice
 from api.tushareApi import getRealTimeData
 from common.JsonHelper import loadJsonConfig
 import time
-
+from common.Logger import Logger
 
 def checkAvgline(stockList):
     date = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
@@ -229,4 +229,8 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    logger = Logger()
+    try:
+        main(sys.argv)
+    except Exception, e:
+        logger.exception(str(e))

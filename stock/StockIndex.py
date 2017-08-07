@@ -3,6 +3,7 @@
 from common.HttpHelper import httpGet
 import json
 import random
+import time
 from StockIndexInfo import StockIndexInfo
 from StockInfo import getShAvgPe, getSzAvgPe
 from common.LoggerHelper import writeErrorLog, writeWarningLog, writeInfoLog, writeDebugLog, writeLog
@@ -30,6 +31,7 @@ def getTotalStockNumber():
     shIndexInfo = StockIndexInfo(shStockIndexInfo[0], shStockIndexInfo[1], shStockIndexInfo[2], shNumberInfo[0],
                                  shNumberInfo[2], shNumberInfo[1], shAvgPE, shOtherData)
 
+    time.sleep(2)
     # 深圳主板
     szAvgPE = getSzAvgPe()
     szQuotation = jo['quotation'][1]
@@ -38,7 +40,7 @@ def getTotalStockNumber():
     szOtherData = getOtherData('3990012')
     szIndexInfo = StockIndexInfo(szStockIndexInfo[0], szStockIndexInfo[1], szStockIndexInfo[2], szNumberInfo[0],
                                  szNumberInfo[2], szNumberInfo[1], szAvgPE[0], szOtherData)
-
+    time.sleep(2)
     # 中小板
     szSMEBoardQuotation = jo['quotation'][2]
     szSMEBoardStockIndexInfo = szSMEBoardQuotation.split(',')
@@ -48,7 +50,7 @@ def getTotalStockNumber():
                                          szSMEBoardStockIndexInfo[2], szSMEBoardNumberInfo[0],
                                          szSMEBoardNumberInfo[2], szSMEBoardNumberInfo[1], szAvgPE[1],
                                          szSMEBoardOtherData)
-
+    time.sleep(2)
     # 创业板
     szSecondBoardQuotation = jo['quotation'][3]
     szSecondBoardStockIndexInfo = szSecondBoardQuotation.split(',')
@@ -58,7 +60,7 @@ def getTotalStockNumber():
                                             szSecondBoardStockIndexInfo[2], szSecondBoardNumberInfo[0],
                                             szSecondBoardNumberInfo[2], szSecondBoardNumberInfo[1], szAvgPE[2],
                                             szSecondBoardOtherData)
-
+    time.sleep(2)
     # 上证50
     sh50Quotation = jo['quotation'][4]
     sh50StockIndexInfo = sh50Quotation.split(',')
@@ -68,6 +70,7 @@ def getTotalStockNumber():
                                    sh50StockIndexInfo[2], sh50NumberInfo[0],
                                    sh50NumberInfo[2], sh50NumberInfo[1], 0,
                                    sh50OtherData)
+    time.sleep(2)
     # 沪深300
     hs300Quotation = jo['quotation'][5]
     hs300StockIndexInfo = hs300Quotation.split(',')
@@ -84,6 +87,7 @@ def getOtherData(code):
     url = 'http://nuff.eastmoney.com/EM_Finance2015TradeInterface/JS.ashx?id=' + code
     res = httpGet(url)
     res = res[9:-1]
+    writeLog("getOtherData: url: " + url + ", data:" + res)
     jo = json.loads(res)
     data = jo['Value']
     result = {}

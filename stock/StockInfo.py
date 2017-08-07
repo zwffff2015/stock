@@ -7,7 +7,7 @@ import sys
 from datetime import datetime, timedelta
 
 from api import tushareApi
-from common.HttpHelper import httpGet
+from common.HttpHelper import httpGet, getEncoding
 from StockTechInfo import StockTechInfo
 from StockTechStatus import StockTechStatus
 from GainIndexForecast import getGainForecast
@@ -81,6 +81,83 @@ def getPEG(code):
         e2019 = growthData[8].replace(",", "")
 
     return (rate, PEG, mixThree, e2017, e2018, e2019)
+
+
+def getPEByWC(code):
+    url = "http://www.iwencai.com/stockpick/search?ts=1&f=1&qs=stockhome_topbar_click&w=" + code + "%20pe"
+    res = httpGet(url)
+    res = res.decode(getEncoding(res))
+
+    pattern = re.compile(r'<table class=\"upright_table\">([\s\S]*)</table>')
+    tableData = pattern.search(res)
+
+    pattern = re.compile(r'<div class=\".*? alignRight\">([\s\S]*?)</div>')
+    divData = pattern.findall(tableData.group())
+
+    pattern = re.compile(r'<a[^>]*?>([\s\S]*?)</a>')
+    peData = 0 if '--' in divData[0] else pattern.findall(divData[0])[0]
+
+    pattern = re.compile(r'<span class=\"pickName fl\">(.*?)</span>')
+    name = pattern.findall(res)[0]
+    return (name, peData)
+
+
+def getPEGByWC(code):
+    url = "http://www.iwencai.com/stockpick/search?ts=1&f=1&qs=stockhome_topbar_click&w=" + code + "%20peg"
+    res = httpGet(url)
+    res = res.decode(getEncoding(res))
+
+    pattern = re.compile(r'<table class=\"upright_table\">([\s\S]*)</table>')
+    tableData = pattern.search(res)
+
+    pattern = re.compile(r'<div class=\"em alignRight alignRight\">([\s\S]*?)</div>')
+    divData = pattern.findall(tableData.group())
+
+    pattern = re.compile(r'<a[^>]*?>([\s\S]*?)</a>')
+    pegData = 0 if '--' in divData[0] else pattern.findall(divData[0])[0]
+
+    return (pegData, divData[1])
+
+
+def getRankPeg(code):
+    url = "http://www.iwencai.com/diag/block-detail?pid=1559&codes=" + code + "&codeType=stock&info=%7B%22view%22%3A%7B%22nolazy%22%3A1%2C%22parseArr%22%3A%7B%22_v%22%3A%22new%22%2C%22dateRange%22%3A%5B%2220170728%22%2C%2220170728%22%5D%2C%22staying%22%3A%5B%5D%2C%22queryCompare%22%3A%5B%5D%2C%22comparesOfIndex%22%3A%5B%5D%7D%2C%22asyncParams%22%3A%7B%22tid%22%3A659%7D%7D%7D"
+    res = httpGet(url)
+    res = res.decode(getEncoding(res))
+
+    jo = json.loads(res)
+    if not bool(jo['success']):
+        return ['--', '--', '--']
+
+    data = jo["data"]["data"]["tableTempl"]
+
+    pattern = re.compile(r'<tr[^>]*?>([\s\S]*?)</tr>')
+    trData = pattern.findall(data)
+
+    columnNames = ['rankNo', 'code', 'name', 'peg']
+    result = []
+    for j in range(0, len(trData)):
+        tr = trData[j]
+        if (j > 3):
+            break
+
+        pattern = re.compile(r'<div.*?>(.*?)</div>')
+        divData = pattern.findall(tr)
+        if len(divData) <= 0:
+            continue
+
+        dict = {}
+        for i in range(0, len(divData) - 1):
+            if '<a' in divData[i]:
+                pattern = re.compile(r'<a.*?>(.*?)</a>')
+                aData = pattern.findall(divData[i])
+                dict[columnNames[i]] = aData[0]
+            else:
+                dict[columnNames[i]] = divData[i]
+        result.append(unicode("{0}:{1}:{2}").format(dict.get('code'), dict.get('name'), dict.get('peg')))
+
+    for i in range(0, 3 - len(result)):
+        result.append('--')
+    return result
 
 
 def getNAvg(code, days):

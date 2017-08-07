@@ -11,6 +11,9 @@ import time
 from datetime import datetime, timedelta
 from threading import Timer
 from wechat.weChatSender import sendMessageToMySelf
+from common.FileHelper import saveFile
+from common.Logger import Logger
+import logging
 
 
 def saveStockIndexToDb(stockIndexInfo, date):
@@ -87,4 +90,8 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    logger = Logger()
+    try:
+        main(sys.argv)
+    except Exception, e:
+        logger.exception(str(e))
