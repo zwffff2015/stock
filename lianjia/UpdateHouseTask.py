@@ -41,8 +41,6 @@ def handleHouseList(houseInfoList, geoCodeHome, geoCodeHerOffice, geoCodeMyOffic
         print houseInfo
         print i
         i = i + 1
-        if i < 14:
-            continue
         try:
             pattern = re.compile(r'<div class=\"houseInfo\">([\s\S]*?)</div>')
             houseInfoDiv = pattern.findall(houseInfo)[0]
@@ -108,25 +106,23 @@ def handleHouseList(houseInfoList, geoCodeHome, geoCodeHerOffice, geoCodeMyOffic
             meDirectionStr = meDirectionStr + '\"'
 
             result.append(
-                unicode("{0},{1},{10},{2},{3},{9},{4},{5},{6},{7},{8}\n").format(village, street, totalPrice,
-                                                                                 unitPrice,
-                                                                                 u'距离：{0}，时间：{1}'.format(
-                                                                                     distanceAndTime[0],
-                                                                                     distanceAndTime[1]), other, subway,
-                                                                                 babyDirectionStr,
-                                                                                 meDirectionStr, dateInfo,
-                                                                                 areaData).encode(
+                unicode("{0},{1},{10},{2},{3},{9},{4},{11},{5},{6},{7},{8}\n").format(village, street, totalPrice,
+                                                                                      unitPrice, distanceAndTime[0],
+                                                                                      other, subway,
+                                                                                      babyDirectionStr,
+                                                                                      meDirectionStr, dateInfo,
+                                                                                      areaData,
+                                                                                      distanceAndTime[1]).encode(
                     'gbk'))
             saveFile("houselist1.csv",
-                     unicode("{0},{1},{10},{2},{3},{9},{4},{5},{6},{7},{8}\n").format(village, street, totalPrice,
+                     unicode("{0},{1},{10},{2},{3},{9},{4},{11},{5},{6},{7},{8}\n").format(village, street, totalPrice,
                                                                                       unitPrice,
-                                                                                      u'距离：{0}，时间：{1}'.format(
-                                                                                          distanceAndTime[0],
-                                                                                          distanceAndTime[1]), other,
+                                                                                      distanceAndTime[0], other,
                                                                                       subway,
                                                                                       babyDirectionStr,
                                                                                       meDirectionStr, dateInfo,
-                                                                                      areaData).encode(
+                                                                                      areaData,
+                                                                                      distanceAndTime[1]).encode(
                          'gbk'), 'a')
         except Exception, e:
             traceback.print_exc()
@@ -143,14 +139,14 @@ def getHouseList(append=False):
     tableData = []
     if not append:
         tableData.append(
-            unicode("{0},{1},{10},{2},{3},{9},{4},{5},{6},{7},{8}\n").format("小区", "街道", "总价（万）", "单价（元/平米）",
-                                                                             "距离",
-                                                                             "其他信息", "地铁信息",
-                                                                             "her",
-                                                                             "me", "发布时间", "所属区域").encode(
+            unicode("{0},{1},{10},{2},{3},{9},{4},{11},{5},{6},{7},{8}\n").format("小区", "街道", "总价（万）", "单价（元/平米）",
+                                                                                  "距离",
+                                                                                  "其他信息", "地铁信息",
+                                                                                  "her",
+                                                                                  "me", "发布时间", "所属区域", "车程时间").encode(
                 'gbk'))
         saveFile("houselist1.csv", tableData, 'a')
-    page = 61
+    page = 1
     listInfo = getHouseListByPage(page)
     totalPages = listInfo[0]
 
@@ -169,7 +165,7 @@ def main(argv):
     reload(sys)
     sys.setdefaultencoding('utf-8')
 
-    getHouseList(True)
+    getHouseList(False)
 
 
 if __name__ == '__main__':

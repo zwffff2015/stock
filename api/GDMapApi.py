@@ -12,11 +12,25 @@ import traceback
 KEY = 'dacfb9273dd8cba740317191ad4daf6c'
 KEY1 = 'a7b765f063397ce07d7558f81de31362'
 KEY2 = 'fa7bdb2bca7f33b44945349bb5365df0'
+KEY3 = 'fdce34a1793de302dcec426d62c7ef0f'
+KEY4 = '54d9cf5b79601bf2e2382dc186c76524'
+KEY5 = '6225b67b34395a2f0de8d4facb3e7f0a'
 
 
 def getKey():
-    randomNumber = random.randint(0, 2)
-    return KEY if randomNumber == 0 else (KEY1 if randomNumber == 1 else KEY2)
+    randomNumber = random.randint(0, 5)
+    if randomNumber == 0:
+        return KEY
+    elif randomNumber == 1:
+        return KEY1
+    elif randomNumber == 2:
+        return KEY2
+    elif randomNumber == 3:
+        return KEY3
+    elif randomNumber == 4:
+        return KEY4
+    else:
+        return KEY5
 
 
 # 计算时间和距离

@@ -18,7 +18,25 @@ sys.setdefaultencoding('utf-8')
 
 
 def getPE(code):
-    bit = 1 if code.startswith("60") else 2
+    bit = 1 if code.startswith("6") else 2
+    url = "http://nuff.eastmoney.com/EM_Finance2015TradeInterface/JS.ashx?id=" + code + str(bit)
+    res = httpGet(url).decode("utf-8")
+    res = res[9:-1]
+    jo = json.loads(res)
+
+    if jo is None or jo["Value"] is None:
+        return
+
+    info = jo["Value"]
+    name = info[2]
+    pe = info[38]
+    pe = 0 if '-' in pe else pe
+    # print name, pe
+    return (name, pe)
+
+
+'''def getPE(code):
+    bit = 1 if code.startswith("6") else 2
     url = "http://hqdigi2.eastmoney.com/EM_Quote2010NumericApplication/CompatiblePage.aspx?Type=fs&jsName=js&stk=" + code + str(
         bit) + "&Reference=xml&rt=0.40404130" + str(random.randint(1000000, 9999999))
     res = httpGet(url).decode("utf-8")
@@ -33,9 +51,47 @@ def getPE(code):
     pe = info[13]
     # print name, pe
     return (name, pe)
+'''
 
 
 def getPEG(code):
+    market = "sh" if code.startswith("6") else "sz"
+    url = "http://emweb.securities.eastmoney.com/PC_HSF10/IndustryAnalysis/IndustryAnalysisAjax?code=" + market + code + "&icode=" + str(
+        random.randint(100, 999))
+    res = httpGet(url).decode("utf-8")
+    jo = json.loads(res)
+    print jo
+    rate = 0
+    PEG = 0
+    if (jo is not None and jo["Result"]["gzbj"] is not None and jo["Result"]["gzbj"]["data"] is not None):
+        if (jo["Result"]["gzbj"]["data"][0]["dm"] != code):
+            writeWarningLog("估值比较的股票代码没找到,实际代码：" + code + ",当前代码：" + jo["Result"]["gzbj"]["data"][0]["dm"])
+        else:
+            rate = jo["Result"]["gzbj"]["data"][0]["pm"]
+            PEG = jo["Result"]["gzbj"]["data"][0]["peg"]
+            PEG = 0 if '--' in PEG else PEG
+
+    if (jo is None or jo["Result"]["czxbj"] is None or jo["Result"]["czxbj"]["data"] is None or len(
+            jo["Result"]["czxbj"]["data"]) <= 0):
+        return (rate, PEG, 0, 0, 0, 0)
+
+    e2017 = 0
+    e2018 = 0
+    e2019 = 0
+    mixThree = 0
+
+    if (jo["Result"]["czxbj"]["data"][0]["dm"] != code):
+        writeWarningLog("成长性比较的股票代码没找到,实际代码：" + code + ",当前代码：" + jo["Result"]["czxbj"]["data"][0]["dm"])
+    else:
+        mixThree = jo["Result"]["czxbj"]["data"][0]["jbmgsyzzlfh"]
+        e2017 = jo["Result"]["czxbj"]["data"][0]["jbmgsyzzl1"]
+        e2018 = jo["Result"]["czxbj"]["data"][0]["jbmgsyzzl2"]
+        e2019 = jo["Result"]["czxbj"]["data"][0]["jbmgsyzzl3"]
+
+    return (rate, PEG, mixThree, e2017, e2018, e2019)
+
+
+'''def getPEG(code):
     url = "http://f10.eastmoney.com/f10_v2/IndustryAnalysis.aspx?code=sh" + code + "&timetip=63634083190" + str(
         random.randint(1000000, 9999999))
     res = httpGet(url).decode("utf-8")
@@ -81,6 +137,7 @@ def getPEG(code):
         e2019 = growthData[8].replace(",", "")
 
     return (rate, PEG, mixThree, e2017, e2018, e2019)
+'''
 
 
 def getPEByWC(code):
@@ -318,7 +375,7 @@ def getTechParamter(code):
 
 
 def getStockInfo(code):
-    bit = 1 if code.startswith("60") else 2
+    bit = 1 if code.startswith("6") else 2
     url = 'http://nuff.eastmoney.com/EM_Finance2015TradeInterface/JS.ashx?id=' + code + str(bit) + '&_=149941' + str(
         random.randint(1000000, 9999999))
     res = httpGet(url)
