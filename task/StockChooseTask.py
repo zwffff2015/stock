@@ -111,15 +111,19 @@ def handleSpecifiedStock(codeList):
                                                                 "PEG").encode('gbk'))
     for i in range(0, len(codeList)):
         code = codeList[i]
-        peInfo = getPE(code)
-        pegData = getPEG(code)
+        try:
+            peInfo = getPE(code)
+            pegData = getPEG(code)
 
-        writeDebugLog(unicode("获取指定股票数据, code: {0} , i:{1}, info: {2}").format(code, i, peInfo))
-        result.append(
-            unicode("{0},{1},{2},{3},{4},{5},{6},{7},{8}\n").format(code, peInfo[0], peInfo[1], pegData[3], pegData[4],
-                                                                    pegData[5], pegData[2], pegData[0],
-                                                                    pegData[1]).encode('gbk'))
-        time.sleep(0.2)
+            writeDebugLog(unicode("获取指定股票数据, code: {0} , i:{1}, info: {2}").format(code, i, peInfo))
+            result.append(
+                unicode("{0},{1},{2},{3},{4},{5},{6},{7},{8}\n").format(code, peInfo[0], peInfo[1], pegData[3],
+                                                                        pegData[4],
+                                                                        pegData[5], pegData[2], pegData[0],
+                                                                        pegData[1]).encode('gbk'))
+            time.sleep(0.2)
+        except Exception, e:
+            logger.exception(unicode("code: {0} , e: {1}".format(code, str(e))))
 
     return result
 
@@ -154,6 +158,7 @@ def getMSCI():
 
 # type: 1=沪深A PE<=上证平均市盈率，2：沪A，3：深A，4：中小板，5：创业板，6：上证50，7：沪深300，8：msci
 def saveToDb(type, result):
+    initMysql()
     date = datetime.now().strftime('%Y-%m-%d')
     insertSql = unicode("INSERT INTO b_peg VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)")
     parameters = []
@@ -164,6 +169,7 @@ def saveToDb(type, result):
              data[8],
              type])
     batchInsert(insertSql, parameters)
+    disconnect()
 
 
 def updateLatestGoodStockListToConfig():
@@ -267,7 +273,7 @@ def getStockHistoryInfo():
 
 def runTask():
     # 周六执行每周任务
-    if datetime.today().weekday() == 5 and datetime.now().hour >= 8 and datetime.now().hour < 9 and datetime.now().minute < 20:
+    if datetime.today().weekday() == 5 and datetime.now().hour >= 9 and datetime.now().hour < 10 and datetime.now().minute < 20:
         begin = datetime.now()
 
         # 执行每周任务
